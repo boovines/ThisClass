@@ -22,7 +22,7 @@ var port =  process.env.PORT ? parseInt(process.env.PORT) : 8080;
 app.get('/form', (req, res, next) => {
 
 	/* Get the absolute path of the html file */
-	var filePath = path.join(__dirname, './index.html')
+	var filePath = path.join(__dirname, './game.html')
 
 	/* Sends the html file back to the browser */
 	res.sendFile(filePath);
