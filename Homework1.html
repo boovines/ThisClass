@@ -3,7 +3,7 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>PROJECTTITLE</title>
+		<title>Homework 1</title>
 	</head>
 	<body>
 		<div>
@@ -11,8 +11,8 @@
 			<input type='text' name='email'>
 	  </div>
 	  <div>
-			<label>What is your username</label>
-			<input type='text' name='username'>
+			<label>What food are you bringing</label>
+			<input type='text' name='food'>
 	 </div>
 	 <div>
 			<label>What is your Password</label>
@@ -36,12 +36,6 @@
 						data[name] = value
 					}
 					return data;
-				}
-				function verify_password(){
-					var $passwords = document.querySelectorAll('input[type="password"]');
-					var same_passwords = $passwords[0].value === $passwords[1].value
-					if(same_passwords === false) return alert('re-enter password')
-					return true
 				}
 				function send_data(data){
 					var req = new XMLHttpRequest();

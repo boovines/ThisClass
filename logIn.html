@@ -1,35 +1,47 @@
-<!DOCTYPE html>
-<html>
-	<head>
-		<title>game</title>
-	</head>
-	<body></body>
-</html>
+
 
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>PROJECTTITLE</title>
+		<title>Log In</title>
 	</head>
 	<body>
+	  <div>
+			<label>What is your username</label>
+			<input type='text' name='username'>
+	 </div>
+	 <div>
+			<label>What is your Password</label>
+			<input type='password' name='password'>
+		</div>
 		<div>
-			<label>Enter your username</label>
-			<input type='text' name='SOMETHING_TO_ASK'>
 			<button>SUBMIT</button>
 		</div>
-	</body>
-</html>
+		<script>
+				function grab_data() {
+					var data = {};
+					var $inputs = document.querySelectorAll("input");
+					for(var i = 0; i<$inputs.length; i++) {
+						var $input = $inputs[i];
+						var name = $input.name;
+						var value = $input.value;
+						data[name] = value
+					}
+					return data;
+				}
+				function send_data(data){
+					var req = new XMLHttpRequest();
+					req.open("POST", "/logIn", true);
+					req.setRequestHeader("content-type", "application/json")
+					req.send(JSON.stringify(data))
+				}
+				function submit() {
+					var formData = grab_data();
+					send_data(formData);
+				}
+				var $button = document.querySelector("button")
+				$button.addEventListener("click", submit)
 
-<!DOCTYPE html>
-<html>
-	<head>
-		<title>Enter your password</title>
-	</head>
-	<body>
-		<div>
-			<label>Enter your password</label>
-			<input type='text' name='SOMETHING_TO_ASK'>
-			<button>SUBMIT</button>
-		</div>
+		</script>
 	</body>
 </html>
