@@ -1,0 +1,84 @@
+
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>PROJECTTITLE</title>
+		<style>
+			body {
+				background-image: url('https://upload.wikimedia.org/wikipedia/commons/3/3b/Buckminsterfullerene_animated.gif');
+				background-size: 175vh 50vw;
+			}
+		</style>
+	</head>
+	<body>
+		<div>
+			<label>What is your email</label>
+			<input type='text' name='email'>
+	  </div>
+	  <div>
+			<label>What is your username</label>
+			<input type='text' name='username'>
+	 </div>
+	 <div>
+			<label>What is your Password</label>
+			<input type='password' name='password'>
+		</div>
+		<div>
+ 			<label>Verify your Password</label>
+ 			<input type='password' name='verification'>
+ 		</div>
+		<div id='submit'>
+			<button>SUBMIT</button>
+		</div>
+		<script>
+				function grab_data() {
+					var data = {};
+					var $inputs = document.querySelectorAll("input");
+					for(var i = 0; i<$inputs.length; i++) {
+						var $input = $inputs[i];
+						var name = $input.name;
+						var value = $input.value;
+						data[name] = value
+					}
+					return data;
+				}
+				function verify_password(){
+					var $passwords = document.querySelectorAll('input[type="password"]');
+					var same_passwords = $passwords[0].value === $passwords[1].value
+					if(same_passwords === false) return alert('re-enter password')
+					return true
+				}
+				function send_data(data){
+					var req = new XMLHttpRequest();
+					req.open("POST", "/form", true);
+					req.setRequestHeader("content-type", "application/json")
+
+					// Alert the user to any errors from the server
+					function readyStateChange() {
+						if(req.readyState !== 4) return;
+						if(req.status !== 200) return;
+						var body = JSON.parse(req.responseText);
+						if(body.error){
+							return alert(body.error)
+						}
+						data = JSON.parse(req.responseText);
+						if(data.error) {
+							alert(data.error);
+						}
+						window.location.href= '/game1'
+					}
+					req.onreadystatechange = readyStateChange;
+					req.send(JSON.stringify(data))
+				}
+				function submit() {
+					var formData = grab_data();
+					verify_password()
+					send_data(formData);
+				}
+				var $button = document.querySelector("button")
+				$button.addEventListener("click", submit)
+
+		</script>
+	</body>
+</html>

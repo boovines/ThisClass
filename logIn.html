@@ -8,11 +8,11 @@
 	<body>
 	  <div>
 			<label>What is your username</label>
-			<input type='text' name='username'>
+			<input type='text' name='username' autocomplete="false">
 	 </div>
 	 <div>
 			<label>What is your Password</label>
-			<input type='password' name='password'>
+			<input type='password' name='password' autocomplete="false">
 		</div>
 		<div>
 			<button>SUBMIT</button>
@@ -34,6 +34,17 @@
 					req.open("POST", "/logIn", true);
 					req.setRequestHeader("content-type", "application/json")
 					req.send(JSON.stringify(data))
+
+					function readyStateChange() {
+						if(req.readyState !== 4) return;
+						if(req.status !== 200) return;
+						var body = JSON.parse(req.responseText);
+						if(body.error) {
+							return alert(body.error);
+						}
+						window.location.href = '/game'
+					}
+					req.onreadystatechange = readyStateChange;
 				}
 				function submit() {
 					var formData = grab_data();
