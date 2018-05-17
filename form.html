@@ -9,6 +9,10 @@
 				background-image: url('https://upload.wikimedia.org/wikipedia/commons/3/3b/Buckminsterfullerene_animated.gif');
 				background-size: 175vh 50vw;
 			}
+			#avatar img{
+				width: 20vmax;
+				height: 20vmax
+			}
 		</style>
 	</head>
 	<body>
@@ -28,6 +32,13 @@
  			<label>Verify your Password</label>
  			<input type='password' name='verification'>
  		</div>
+		<div>
+
+			<label>Avatar</label>
+			<input type='file' accept='image/*' name='avatar'>
+			<div id='avatar'></div>
+
+		</div>
 		<div id='submit'>
 			<button>SUBMIT</button>
 		</div>
@@ -37,9 +48,12 @@
 					var $inputs = document.querySelectorAll("input");
 					for(var i = 0; i<$inputs.length; i++) {
 						var $input = $inputs[i];
-						var name = $input.name;
-						var value = $input.value;
-						data[name] = value
+						if($input.type === 'text' || $input.type === 'password'){
+							data[$input.name] = $input.value;
+						} else if($input.type === 'file'){
+							data[$input.name] = imageData;
+						}
+
 					}
 					return data;
 				}
@@ -66,18 +80,38 @@
 						if(data.error) {
 							alert(data.error);
 						}
-						window.location.href= '/game1'
+						window.location.href= '/game'
 					}
 					req.onreadystatechange = readyStateChange;
 					req.send(JSON.stringify(data))
 				}
 				function submit() {
 					var formData = grab_data();
+					if(!formData.username) return alert('Please enter username');
+					if(!imageData) return alert('Enter an Avatar!');
 					verify_password()
 					send_data(formData);
 				}
+
 				var $button = document.querySelector("button")
 				$button.addEventListener("click", submit)
+
+				var $avatarInput = document.querySelector('input[name=avatar]');
+				var $preview = document.querySelector('#avatar');
+				var imageData;
+				$avatarInput.addEventListener('change', previewAvatar);
+
+				function previewAvatar() {
+					var fileReader = new FileReader();
+					fileReader.onload = function(e) {
+						imageData = e.target.result;
+						var $img = document.createElement('img');
+						$img.src = imageData;
+						$preview.innerHTML = '';
+						$preview.appendChild($img);
+					}
+					fileReader.readAsDataURL($avatarInput.files[0]);
+				}
 
 		</script>
 	</body>

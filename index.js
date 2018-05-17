@@ -5,9 +5,13 @@ var bodyParser = require("body-parser");
 var crypto = require('crypto');
 var mongoose = require("mongoose");
 var usermodel = require("./user.js").getModel();
+
 var http = require('http');
 var path = require('path');
-
+var passport = require('passport');
+var LocalStrategy = require('passport-local').Strategy;
+var session = require('express-session');
+var fs = require('fs')
 var app = express();
 var server = http.createServer(app);
 var io = Io(server);
@@ -16,13 +20,25 @@ var dbAddress = process.env.MONGODB_URI || "mongodb://127.0.0.1/boovines";
 var port =  process.env.PORT ? parseInt(process.env.PORT) : 8080;
 
 function addSockets() {
+	var players = {};
 	io.on('connection', (socket) => {
-		console.log('user connected')
+		var user = socket.handshake.query.user;
+		players[user]={
+			x:0, y:0
+		}
+		io.emit('playerUpdate', players);
+		io.emit('newMessage', {user:user,message:'Entered the game'})
 		socket.on('disconnect', () => {
-			console.log('user disconnected');
+			delete players[user];
+			io.emit('newMessage', {user:user, message: 'Left the game'})
+			io.emit('playerUpdate', players);
 		});
 		socket.on('message', (message) =>{
 			io.emit('newMessage',message);
+		});
+		socket.on('playerUpdate', (player)=>{
+			player[user] = player;
+			io.emit('playerUpdate', players);
 		});
 	});
 }
@@ -38,13 +54,32 @@ function start_server() {
 			crypto.pbkdf2(password, user.salt, iterations, 256, 'sha256', function(err, hash) {
 				if(err) return callback ('Error in hashing password');
 				if(user.password !== hash.toString('base64')) return callback('Wrong Password');
-				callback(null);
+				callback(null, user);
 			});
 		});
 	}
 
 	app.use(bodyParser.json({limit: "16mb"}));
 	app.use(express.static(path.join(__dirname, 'public')));
+	app.use(session({ secret: 'boivines'}));
+	app.use(passport.initialize());
+	app.use(passport.session());
+
+	passport.use(new LocalStrategy({usernameField: 'username', passwordField: 'password'}, authenticateUser));
+
+	passport.serializeUser(function(user, done){
+		done(null, user.id);
+	});
+
+	passport.deserializeUser(function(id, done) {
+
+		usermodel.findById(id, function(err, user) {
+			done(err, user);
+		});
+
+	});
+
+
 
 	app.get('/form', (req, res, next) => {
 		var filePath = path.join(__dirname, './form.html')
@@ -73,30 +108,63 @@ function start_server() {
 				if(err) {
 					return res.send({error: err.message});
 				}
-				res.send({error: null});
-			});
+				passport.authenticate('local', function(err, user){
+					if(err) return res.send({error:err});
+
+					req.logIn(user,(err) => {
+						if(err) return res.send({error:err});
+						return res.send({error: null});
+					})
+				})(req,res,next);
+					});
 		});
 	})
 
 	app.get('/game', (req, res, next) => {
-
+		if(!req.user) return res.redirect('/login?error=Perish%20fool')
 		var filePath = path.join(__dirname, './game.html')
-		res.sendFile(filePath);
+		var fileContents = fs.readFileSync(filePath, 'utf8')
+		fileContents = fileContents.replace('{{USER}}', req.user.username)
+		res.send(fileContents);
 
 	});
 
-	app.post("/login", (req, res, next)=> {
-		var username = req.body.username;
-		var password = req.body.password;
-		authenticateUser(username, password, function(err) {
-				res.send({error:err});
+	app.get('/picture/:username', (req,res,next)=>{
+		if(!req.user) return res.send('YOU ARE NOT LOGGED IN')
+		usermodel.findOne({username:req.params.username}, function (err,user){
+			if(err) return res.send(err);
+			try {
+				var imageType = user.avatar.match(/^data:image\/([a-zA-Z0-9]*);/)[1];
+				var base64Data = user.avatar.split(',')[1];
+				var binaryData = new Buffer(base64Data, 'base64');
+				res.contentType('image/' + imageType);
+				res.end(binaryData, 'binary');
+			} catch(ex) {
+				res.send(ex);
+			}
 		});
+	});
+
+	app.post("/login", (req, res, next)=> {
+		passport.authenticate('local', function(err, user){
+			if(err) return res.send({error:err});
+
+			req.logIn(user,(err) => {
+				if(err) return res.send({error:err});
+				return res.send({error: null});
+			})
+		})(req,res,next);
 	});
 
 	app.get('/login', (req,res,next)=>{
 		var filePath = path.join(__dirname, './login.html')
 		res.sendFile(filePath);
 	})
+
+	app.get('/logout', (req, res, next) => {
+		req.logOut()
+		res.redirect('/login?error=perish%20fool')
+	});
 
 	/* Defines what function to all when the server recieves any request from http://localhost:8080 */
 	server.on('listening', () => {
